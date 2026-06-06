@@ -334,7 +334,7 @@ class BacktestRunner:
     
     if not available_features:
         logger.error("  ❌ No available features found!")
-        return False
+            return False
     
     logger.info(f"  ✅ Using {len(available_features)} available features")
     
