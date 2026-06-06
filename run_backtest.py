@@ -295,48 +295,87 @@ class BacktestRunner:
         return True
     
     def _prepare_features(self) -> bool:
-        logger.info("=" * 60)
-        logger.info("🔧 FEATURE PREPARATION")
-        logger.info("=" * 60)
-        
-        df = self.data['df']
-        
-        # Load selected features if available
-        features = None
-        if 'features' in self.models:
-            try:
-                with open(self.models['features'], 'r') as f:
-                    feat_data = json.load(f)
-                if isinstance(feat_data, dict) and 'selected_features' in feat_data:
-                    features = feat_data['selected_features']
-                elif isinstance(feat_data, list):
-                    features = feat_data
-                logger.info(f"  ✅ Loaded {len(features)} selected features")
-            except:
-                pass
-        
-        if not features:
-            # Default features
-            features = ['open', 'high', 'low', 'close', 'volume']
-            logger.info(f"  ⚠️ Using default features")
-        
-        # Prepare data
-        data = df[features].copy()
-        data = data.ffill().bfill().fillna(0)
-        
-        # Scale if scaler available
+    logger.info("=" * 60)
+    logger.info("🔧 FEATURE PREPARATION")
+    logger.info("=" * 60)
+    
+    df = self.data['df']
+    
+    # Load selected features from JSON
+    features = None
+    if 'features' in self.models:
+        try:
+            with open(self.models['features'], 'r') as f:
+                feat_data = json.load(f)
+            if isinstance(feat_data, dict) and 'selected_features' in feat_data:
+                features = feat_data['selected_features']
+            elif isinstance(feat_data, list):
+                features = feat_data
+            logger.info(f"  ✅ Loaded {len(features)} selected features from JSON")
+        except Exception as e:
+            logger.warning(f"  ⚠️ Failed to load features: {e}")
+    
+    if not features:
+        # Try to get features from scaler
         if 'scaler' in self.models:
-            data = self.models['scaler'].transform(data)
+            try:
+                features = self.models['scaler'].feature_names_in_.tolist()
+                logger.info(f"  ✅ Loaded {len(features)} features from scaler")
+            except:
+                features = ['open', 'high', 'low', 'close', 'volume']
+                logger.warning(f"  ⚠️ Using default {len(features)} features")
+    
+    # Check which features are available in dataframe
+    available_features = [f for f in features if f in df.columns]
+    missing_features = [f for f in features if f not in df.columns]
+    
+    if missing_features:
+        logger.warning(f"  ⚠️ Missing {len(missing_features)} features: {missing_features[:5]}...")
+    
+    if not available_features:
+        logger.error("  ❌ No available features found!")
+        return False
+    
+    logger.info(f"  ✅ Using {len(available_features)} available features")
+    
+    # Prepare data
+    data = df[available_features].copy()
+    data = data.ffill().bfill().fillna(0)
+    
+    # Scale if scaler available
+    if 'scaler' in self.models:
+        try:
+            # Scale only the columns scaler expects
+            scaler_features = self.models['scaler'].feature_names_in_.tolist()
+            common_features = [f for f in scaler_features if f in data.columns]
+            
+            if len(common_features) != len(scaler_features):
+                logger.warning(f"  ⚠️ Scaler expects {len(scaler_features)} features, got {len(common_features)}")
+                # Add missing columns with zeros
+                for f in scaler_features:
+                    if f not in data.columns:
+                        data[f] = 0
+                data = data[scaler_features]
+            
+            data_scaled = self.models['scaler'].transform(data)
             logger.info(f"  ✅ Data scaled")
-        
-        # Create sequences
-        window = self.config.get('window', 60)
-        X = np.array([data[i-window:i] for i in range(window, len(data))])
-        logger.info(f"  ✅ Created {len(X)} sequences")
-        
-        self.data['X'] = X
-        self.data['window'] = window
-        return True
+            data = data_scaled
+        except Exception as e:
+            logger.warning(f"  ⚠️ Scaling failed: {e}, using raw data")
+            data = data.values
+    
+    # Create sequences
+    window = self.config.get('window', 60)
+    if len(data) < window:
+        logger.error(f"  ❌ Not enough data: {len(data)} < {window}")
+        return False
+    
+    X = np.array([data[i-window:i] for i in range(window, len(data))])
+    logger.info(f"  ✅ Created {len(X)} sequences (window={window}, features={data.shape[1]})")
+    
+    self.data['X'] = X
+    self.data['window'] = window
+    return True
     
     def _generate_predictions(self) -> bool:
         logger.info("=" * 60)
