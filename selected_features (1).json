@@ -1,0 +1,11 @@
+{
+  "selected_features": [
+    "rsi_6",
+    "dpo",
+    "log_ret_3",
+    "ret_3",
+    "zscore_10"
+  ],
+  "importance_scores": {},
+  "top_k": 150
+}
