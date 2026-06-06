@@ -4,6 +4,9 @@
     "dpo",
     "log_ret_3",
     "ret_3",
+    "ema",
+    "atr",
+    "rsi_20",
     "zscore_10"
   ],
   "importance_scores": {},
