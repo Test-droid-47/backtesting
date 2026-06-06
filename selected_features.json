@@ -1,13 +1,10 @@
 {
   "selected_features": [
-    "rsi_6",
     "dpo",
     "log_ret_3",
-    "ret_3",
-    "ema",
+    "ema_20",
     "atr",
-    "rsi_20",
-    "zscore_10"
+    "close_zscore_20"
   ],
   "importance_scores": {},
   "top_k": 150
