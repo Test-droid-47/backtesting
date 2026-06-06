@@ -295,35 +295,35 @@ class BacktestRunner:
         return True
     
     def _prepare_features(self) -> bool:
-    logger.info("=" * 60)
-    logger.info("🔧 FEATURE PREPARATION")
-    logger.info("=" * 60)
+        logger.info("=" * 60)
+        logger.info("🔧 FEATURE PREPARATION")
+        logger.info("=" * 60)
     
-    df = self.data['df']
+        df = self.data['df']
     
-    # Load selected features from JSON
-    features = None
-    if 'features' in self.models:
-        try:
-            with open(self.models['features'], 'r') as f:
-                feat_data = json.load(f)
-            if isinstance(feat_data, dict) and 'selected_features' in feat_data:
-                features = feat_data['selected_features']
-            elif isinstance(feat_data, list):
-                features = feat_data
-            logger.info(f"  ✅ Loaded {len(features)} selected features from JSON")
-        except Exception as e:
-            logger.warning(f"  ⚠️ Failed to load features: {e}")
-    
-    if not features:
-        # Try to get features from scaler
-        if 'scaler' in self.models:
+        # Load selected features from JSON
+        features = None
+        if 'features' in self.models:
             try:
-                features = self.models['scaler'].feature_names_in_.tolist()
-                logger.info(f"  ✅ Loaded {len(features)} features from scaler")
-            except:
-                features = ['open', 'high', 'low', 'close', 'volume']
-                logger.warning(f"  ⚠️ Using default {len(features)} features")
+                with open(self.models['features'], 'r') as f:
+                    feat_data = json.load(f)
+                if isinstance(feat_data, dict) and 'selected_features' in feat_data:
+                    features = feat_data['selected_features']
+                elif isinstance(feat_data, list):
+                    features = feat_data
+                logger.info(f"  ✅ Loaded {len(features)} selected features from JSON")
+            except Exception as e:
+                logger.warning(f"  ⚠️ Failed to load features: {e}")
+    
+        if not features:
+            # Try to get features from scaler
+            if 'scaler' in self.models:
+                try:
+                    features = self.models['scaler'].feature_names_in_.tolist()
+                    logger.info(f"  ✅ Loaded {len(features)} features from scaler")
+                except:
+                    features = ['open', 'high', 'low', 'close', 'volume']
+                    logger.warning(f"  ⚠️ Using default {len(features)} features")
     
     # Check which features are available in dataframe
     available_features = [f for f in features if f in df.columns]
