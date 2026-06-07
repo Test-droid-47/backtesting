@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 """
 AISure Backtest Engine - Optimized & Bug-Fixed
-Fixes: Look-ahead bias, Sequence Alignment, and Dictionary Access errors.
 """
-
 import os
 import json
 import numpy as np
